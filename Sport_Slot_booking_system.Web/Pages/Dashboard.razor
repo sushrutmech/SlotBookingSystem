@@ -1,0 +1,147 @@
+﻿@page "/dashboard"
+
+@using Sport_Slot_booking_system.Core
+@using Radzen
+@using Radzen.Blazor
+@using Sport_Slot_booking_system.Web.Helpers
+@using Sport_Slot_booking_system.Web.Services
+@inject SlotBookingService BookingService
+@inject NotificationService NotificationService
+
+<h3>Dashboard - Booking Scheduler</h3>
+
+@if (isLoading)
+{
+    <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" Style="width:100%" />
+}
+<RadzenScheduler Data="@bookings"
+                 TItem="Booking"
+                 StartProperty="StartTime"
+                 EndProperty="EndTime"
+                 TextProperty="CustomerName"
+                 SlotSelect="OnSlotSelect"
+                 StartTime="@DateTime.Today.AddHours(4)"
+                 EndTime="@DateTime.Today.AddHours(23).AddMinutes(30)"
+                 Style="height:800px">
+
+    <!-- ✅ Template FIRST -->
+    <Template Context="data">
+        <div style="background:@GetFacilityColor(data.FacilityId);
+                    color:white;
+                    padding:5px;
+                    border-radius:6px;">
+            <b>@data.Facility</b><br />
+            @data.CustomerName<br />
+            (@data.Status)
+        </div>
+    </Template>
+
+    <!-- ✅ Then ChildContent -->
+    <ChildContent>
+        <RadzenDayView StartTime="@TimeSpan.Zero" EndTime="@TimeSpan.FromHours(24)" />
+        <RadzenWeekView StartTime="@TimeSpan.Zero" EndTime="@TimeSpan.FromHours(24)" />
+    </ChildContent>
+
+</RadzenScheduler>
+
+@code {
+    List<Booking> bookings = new List<Booking>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    bool isLoading = false;
+
+
+    async Task LoadData()
+    {
+        isLoading = true;
+
+        var data = await BookingService.GetMyBookings();
+
+        var list = new List<Booking>();
+
+        if (data != null)
+        {
+            list = data.Select(x => new Booking
+            {
+                Id = x.Id,
+                Facility = x.FacilityName,
+                FacilityId = x.FacilityId,
+                StartTime = TimeHelper.ToLocal(x.StartTime),
+                EndTime = TimeHelper.ToLocal(x.EndTime),
+                CustomerName = x.CustomerName,
+                Status = x.Status
+            }).ToList();
+        }
+
+        bookings = list;
+        isLoading = false;
+    }
+
+    // async Task LoadData()
+    // {
+    //     isLoading = true;
+
+    //     var data = await BookingService.GetMyBookings();
+
+    //     if (data != null)
+    //     {
+    //         bookings = data.Select(x => new Booking
+    //         {
+    //             Id = x.Id,
+    //             Facility = x.FacilityName,
+    //             FacilityId = x.FacilityId,
+    //             StartTime = TimeHelper.ToLocal(x.StartTime),
+    //             EndTime = TimeHelper.ToLocal(x.EndTime),
+    //             CustomerName = x.CustomerName,
+    //             Status = x.Status
+    //         }).ToList();
+    //     }
+
+    //     isLoading = false;
+    // }
+    string GetFacilityColor(int facilityId)
+    {
+        return facilityId switch
+        {
+            1 => "#4CAF50", // Cricket Turf → Green
+            2 => "#2196F3", // Swimming → Blue
+            3 => "#FF9800", // Coaching → Orange
+            _ => "#9E9E9E"
+        };
+    }
+
+    void OnSlotSelect(SchedulerSlotSelectEventArgs args)
+    {
+        var booking = new Booking
+        {
+            Id = Guid.NewGuid(),
+            StartTime = args.Start,
+            EndTime = args.End,
+            CustomerName = "Customer",
+            Facility = "Cricket"
+        };
+
+        bookings.Add(booking);
+
+        // Force UI refresh
+        StateHasChanged();
+    }
+
+    public class Booking
+    {
+        public Guid Id { get; set; }
+
+        public string Facility { get; set; } = string.Empty;
+        public int FacilityId { get; set; }   // ✅ needed for color
+
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+
+        public string CustomerName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+}

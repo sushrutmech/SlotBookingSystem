@@ -1,0 +1,92 @@
+﻿@page "/register"
+@using Radzen
+@using Radzen.Blazor
+@using Sport_Slot_booking_system.Web.Models
+@using Sport_Slot_booking_system.Web.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject NotificationService NotificationService
+
+<h3>Register</h3>
+
+<RadzenTemplateForm Data="@model" TItem="RegisterDto" Submit="@OnSubmit">
+    <RadzenFieldset Text="User Details">
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <RadzenLabel Text="First Name" />
+                <RadzenTextBox Name="FirstName" @bind-Value="model.FirstName" Placeholder="First Name" Style="width:100%" />
+                <RadzenRequiredValidator Component="FirstName" Text="First name is required" />
+            </div>
+            <div class="col-md-4">
+                <RadzenLabel Text="Middle Name" />
+                <RadzenTextBox @bind-Value="model.MiddleName" Placeholder="Middle Name" Style="width:100%" />
+            </div>
+            <div class="col-md-4">
+                <RadzenLabel Text="Last Name" />
+                <RadzenTextBox Name="LastName" @bind-Value="model.LastName" Placeholder="Last Name" Style="width:100%" />
+                <RadzenRequiredValidator Component="LastName" Text="Last name is required" />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <RadzenLabel Text="Email" />
+                <RadzenTextBox Name="Email" @bind-Value="model.Email" Placeholder="Email" Style="width:100%" />
+                <RadzenRequiredValidator Component="Email" Text="Email is required" />
+                <RadzenEmailValidator Component="Email" Text="Enter a valid email" />
+            </div>
+            <div class="col-md-6">
+                <RadzenLabel Text="Mobile No" />
+                <RadzenTextBox Name="MobileNo" @bind-Value="model.MobileNo" Placeholder="Mobile No" Style="width:100%" />
+                <RadzenRequiredValidator Component="MobileNo" Text="Mobile number is required" />
+                <RadzenRegexValidator Component="MobileNo" Pattern="^\d{10}$" Text="Must be 10 digits" />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <RadzenLabel Text="Password" />
+                <RadzenPassword Name="Password" @bind-Value="model.Password" Placeholder="Password" Style="width:100%" />
+                <RadzenRequiredValidator Component="Password" Text="Password is required" />
+                <RadzenLengthValidator Component="Password" Min="6" Text="Min 6 characters" />
+            </div>
+            <div class="col-md-6">
+                <RadzenLabel Text="Date of Birth" />
+                <RadzenDatePicker Name="DateOfBirth" @bind-Value="model.DateOfBirth" Style="width:100%" />
+                <RadzenRequiredValidator Component="DateOfBirth" Text="Date of birth is required" />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <RadzenLabel Text="Gender" />
+                <RadzenDropDown Name="Gender" Data="@genders" @bind-Value="model.Gender" Placeholder="Select Gender" Style="width:100%" />
+                <RadzenRequiredValidator Component="Gender" Text="Gender is required" />
+            </div>
+        </div>
+
+        <RadzenButton Text="Register"
+                      ButtonStyle="ButtonStyle.Primary"
+                      ButtonType="ButtonType.Submit"
+                      IsBusy="@isLoading"
+                      BusyText="Registering..." />
+
+    </RadzenFieldset>
+</RadzenTemplateForm>
+
+@code {
+    RegisterDto model = new();
+    List<string> genders = new() { "Male", "Female", "Other" };
+    bool isLoading = false;
+
+    async Task OnSubmit()
+    {
+        isLoading = true;
+        var success = await AuthService.Register(model);
+        isLoading = false;
+
+        if (success)
+            Navigation.NavigateTo("/login");
+    }
+}

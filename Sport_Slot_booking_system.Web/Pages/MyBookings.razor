@@ -1,0 +1,147 @@
+﻿@page "/my-bookings"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using Radzen.Blazor
+@using Sport_Slot_booking_system.Core.Model
+@using Sport_Slot_booking_system.Web.Helpers
+@using Sport_Slot_booking_system.Web.Services
+@inject SlotBookingService BookingService
+@inject NotificationService NotificationService
+
+<h3>My Bookings</h3>
+
+<RadzenDataGrid @ref="grid"
+                Data="@bookings"
+                TItem="BookingDto"
+                Count="@totalCount"
+                LoadData="@OnLoadData"
+                AllowPaging="true"
+                AllowSorting="true"
+                AllowFiltering="true"
+                FilterMode="FilterMode.Simple"
+                PageSize="10"
+                PageSizeOptions="@(new int[] { 5, 10, 25, 50 })"
+                ShowPagingSummary="true"
+                PagerHorizontalAlign="HorizontalAlign.Right"
+                AllowColumnResize="true"
+                IsLoading="@isLoading">
+
+    <Columns>
+
+        <RadzenDataGridColumn TItem="BookingDto"
+                              Property="FacilityName"
+                              Title="Facility"
+                              Width="150px" />
+
+        <RadzenDataGridColumn TItem="BookingDto"
+                              Title="Start"
+                              Width="180px"
+                              Filterable="false"
+                              Sortable="false">
+            <Template Context="data">
+                @TimeHelper.ToLocal(data.StartTime).ToString("dd MMM yyyy hh:mm tt")
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="BookingDto"
+                              Title="End"
+                              Width="180px"
+                              Filterable="false"
+                              Sortable="false">
+            <Template Context="data">
+                @TimeHelper.ToLocal(data.EndTime).ToString("dd MMM yyyy hh:mm tt")
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="BookingDto"
+                              Property="Status"
+                              Title="Status"
+                              Width="120px" />
+
+        <RadzenDataGridColumn TItem="BookingDto"
+                              Title="Actions"
+                              Width="120px"
+                              Filterable="false"
+                              Sortable="false">
+            <Template Context="data">
+                <RadzenButton Text="Cancel"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Size="ButtonSize.Small"
+                              Click="@(() => OnCancel(data))" />
+            </Template>
+        </RadzenDataGridColumn>
+
+    </Columns>
+
+</RadzenDataGrid>
+
+@code {
+    RadzenDataGrid<BookingDto>? grid;
+
+    List<BookingDto> bookings = new();
+    int totalCount = 0;
+    bool isLoading = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && grid != null)
+            await grid.Reload();
+    }
+
+    async Task OnLoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        var request = BuildRequest(args);
+        var result = await BookingService.GetMyBookingsGridAsync(request);  // ✅ same endpoint
+
+        if (result != null)
+        {
+            bookings = result.PaginatedData ?? new();
+            totalCount = Convert.ToInt32(result.TotalRecords);
+        }
+
+        isLoading = false;
+    }
+
+    PaginationDomain BuildRequest(LoadDataArgs args)
+    {
+        var request = new PaginationDomain
+        {
+            PageNo = (args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0)
+                        ? (args.Skip.Value / args.Top.Value) + 1
+                        : 1,
+            PageSize = args.Top ?? 10
+        };
+
+        // 🔽 SORT
+        if (!string.IsNullOrEmpty(args.OrderBy))
+        {
+            var parts = args.OrderBy.Split(' ');
+            request.SortByColumn = parts[0];
+            request.SortDesOrder = parts.Length > 1 &&
+                                   parts[1].Equals("DESC", StringComparison.OrdinalIgnoreCase);
+        }
+
+        // 🔍 FILTERS
+        if (args.Filters != null && args.Filters.Any())
+        {
+            request.Searches = args.Filters
+                .Where(f => f.FilterValue != null)
+                .Select(f => new SearchDomain
+                {
+                    PropertyName = f.Property,
+                    Value = f.FilterValue
+                })
+                .ToList();
+        }
+
+        return request;
+    }
+
+    void OnCancel(BookingDto booking)
+    {
+        // TODO: confirm and cancel
+    }
+}

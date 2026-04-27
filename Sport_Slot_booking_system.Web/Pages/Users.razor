@@ -1,0 +1,178 @@
+﻿@page "/users"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using Radzen.Blazor
+@using Sport_Slot_booking_system.Core.Model
+@using Sport_Slot_booking_system.Web.Services
+@inject UserService UserService
+@inject NotificationService NotificationService
+
+<h3>Users</h3>
+
+<RadzenDataGrid @ref="grid"
+                Data="@users"
+                TItem="UserResponseDto"
+                Count="@totalCount"
+                LoadData="@OnLoadData"
+                AllowPaging="true"
+                AllowSorting="true"
+                AllowFiltering="true"
+                FilterMode="FilterMode.Simple"
+                PageSize="10"
+                PageSizeOptions="@(new int[] { 5, 10, 25, 50 })"
+                ShowPagingSummary="true"
+                PagerHorizontalAlign="HorizontalAlign.Right"
+                AllowColumnResize="true"
+                IsLoading="@isLoading">
+
+    <Columns>
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Property="FirstName"
+                              Title="First Name"
+                              Width="130px" />
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Property="MiddleName"
+                              Title="Middle Name"
+                              Width="140px" />
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Property="LastName"
+                              Title="Last Name"
+                              Width="130px" />
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Property="Email"
+                              Title="Email"
+                              Width="220px" />
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Property="MobileNo"
+                              Title="Mobile"
+                              Width="130px" />
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Property="Gender"
+                              Title="Gender"
+                              Width="100px" />
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Title="Roles"
+                              Width="150px"
+                              Filterable="false"
+                              Sortable="false">
+            <Template Context="data">
+                @string.Join(", ", data.Roles)
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Title="DOB"
+                              Width="130px"
+                              Filterable="false"
+                              Sortable="false">
+            <Template Context="data">
+                @data.DateOfBirth.ToString("dd MMM yyyy")
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="UserResponseDto"
+                              Title="Actions"
+                              Width="140px"
+                              Filterable="false"
+                              Sortable="false">
+            <Template Context="data">
+                <RadzenButton Text="Edit"
+                              ButtonStyle="ButtonStyle.Info"
+                              Size="ButtonSize.Small"
+                              Click="@(() => OnEdit(data))"
+                              class="me-1" />
+                <RadzenButton Text="Delete"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Size="ButtonSize.Small"
+                              Click="@(() => OnDelete(data))" />
+            </Template>
+        </RadzenDataGridColumn>
+
+    </Columns>
+
+</RadzenDataGrid>
+
+@code {
+    RadzenDataGrid<UserResponseDto>? grid;
+
+    List<UserResponseDto> users = new();
+    int totalCount = 0;
+    bool isLoading = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && grid != null)
+        {
+            await grid.Reload();
+        }
+    }
+
+    async Task OnLoadData(LoadDataArgs args)
+    {
+        isLoading = true;
+        StateHasChanged(); // ✅ show loader immediately before await
+
+        var request = BuildRequest(args);
+        var result = await UserService.GetUsersGridAsync(request);
+
+        if (result != null)
+        {
+            users = result.PaginatedData ?? new();
+            totalCount = Convert.ToInt32(result.TotalRecords);
+        }
+
+        isLoading = false;
+    }
+
+    UserGridRequest BuildRequest(LoadDataArgs args)
+    {
+        var request = new UserGridRequest
+        {
+            PageNo = (args.Skip.HasValue && args.Top.HasValue && args.Top.Value > 0)
+                        ? (args.Skip.Value / args.Top.Value) + 1
+                        : 1,
+            PageSize = args.Top ?? 10
+        };
+
+        // 🔽 SORT
+        if (!string.IsNullOrEmpty(args.OrderBy))
+        {
+            var parts = args.OrderBy.Split(' ');
+            request.SortByColumn = parts[0];
+            request.SortDesOrder = parts.Length > 1 &&
+                                   parts[1].Equals("DESC", StringComparison.OrdinalIgnoreCase);
+        }
+
+        // 🔍 FILTERS
+        if (args.Filters != null && args.Filters.Any())
+        {
+            request.Searches = args.Filters
+                .Where(f => f.FilterValue != null)
+                .Select(f => new SearchDomain
+                {
+                    PropertyName = f.Property,
+                    Value = f.FilterValue
+                })
+                .ToList();
+        }
+
+        return request;
+    }
+
+    void OnEdit(UserResponseDto user)
+    {
+        // TODO: open edit dialog
+    }
+
+    void OnDelete(UserResponseDto user)
+    {
+        // TODO: confirm and delete
+    }
+}

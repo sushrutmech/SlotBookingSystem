@@ -1,0 +1,49 @@
+﻿@* @inherits LayoutComponentBase
+
+
+@using Radzen
+@using Radzen.Blazor
+
+<RadzenLayout Style="height: 100vh">
+
+    <!-- HEADER -->
+    <RadzenHeader Style="background:#1976d2; color:white; padding:10px">
+        <RadzenButton Icon="menu"
+                      ButtonStyle="ButtonStyle.Light"
+                      Size="ButtonSize.Small"
+                      Click="@ToggleSidebar"
+                      Style="margin-right:10px" />
+        <h3>Sport Slot Booking System</h3>
+    </RadzenHeader>
+
+    <!-- SIDEBAR -->
+    <RadzenSidebar @bind-Expanded="@sidebarExpanded" Style="background:#f4f4f4 ;">
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" Path="/dashboard" />
+            <RadzenPanelMenuItem Text="Book Slot" Icon="event" Path="/slot-booking" />
+            <RadzenPanelMenuItem Text="My Bookings" Icon="list" Path="/my-bookings" />
+            <RadzenPanelMenuItem Text="Login" Icon="login" Path="/login" />
+            <RadzenPanelMenuItem Text="Register" Icon="person_add" Path="/register" />
+            <RadzenPanelMenuItem Text="Profile" Icon="account_circle" Path="/profile" />
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+    <RadzenNotification />
+    <!-- BODY -->
+    <RadzenBody Style="padding:20px">
+        @Body
+    </RadzenBody>
+
+    <!-- FOOTER -->
+    <RadzenFooter Style="background:#eee; padding:10px; text-align:center">
+        © 2026 Sport Slot Booking System
+    </RadzenFooter>
+
+</RadzenLayout>
+
+@code {
+    bool sidebarExpanded = true;
+    void ToggleSidebar()
+    {
+        sidebarExpanded = !sidebarExpanded;
+    }
+} *@

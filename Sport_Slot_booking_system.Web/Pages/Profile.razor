@@ -1,0 +1,81 @@
+﻿@page "/profile"
+@using Microsoft.AspNetCore.Authorization
+@using Sport_Slot_booking_system.Core
+@using Radzen
+@using Radzen.Blazor
+@using Sport_Slot_booking_system.Core.Model
+@attribute [Authorize]
+<h3>User Profile</h3>
+
+<RadzenCard Style="max-width:600px; margin:auto; padding:20px">
+
+    <RadzenTemplateForm TItem="User" Data="@user" Submit="@OnSubmit">
+
+        <RadzenFieldset Text="Profile Details">
+
+            <div class="row">
+                <div class="col-md-4">
+                    <RadzenTextBox @bind-Value="user.FirstName" Placeholder="First Name" Style="width:100%" />
+                </div>
+
+                <div class="col-md-4">
+                    <RadzenTextBox @bind-Value="user.MiddleName" Placeholder="Middle Name" Style="width:100%" />
+                </div>
+
+                <div class="col-md-4">
+                    <RadzenTextBox @bind-Value="user.LastName" Placeholder="Last Name" Style="width:100%" />
+                </div>
+            </div>
+
+            <br />
+
+            <RadzenTextBox @bind-Value="user.Email" Placeholder="Email" Style="width:100%" />
+            <br /><br />
+
+            <RadzenTextBox @bind-Value="user.MobileNo" Placeholder="Mobile No" Style="width:100%" />
+            <br /><br />
+
+            <RadzenDatePicker @bind-Value="user.DateOfBirth" Style="width:100%" />
+            <br /><br />
+
+            <RadzenDropDown Data="@genders"
+                            @bind-Value="user.Gender"
+                            Placeholder="Select Gender"
+                            Style="width:100%" />
+
+            <br /><br />
+
+            <RadzenButton Text="Update Profile"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Type="Submit" />
+
+        </RadzenFieldset>
+
+    </RadzenTemplateForm>
+
+</RadzenCard>
+
+@code {
+    User user = new();
+
+    List<string> genders = new() { "Male", "Female", "Other" };
+
+    protected override void OnInitialized()
+    {
+        // Dummy user (later load from DB / API)
+        user = new User
+        {
+            FirstName = "Amit",
+            LastName = "Patil",
+            Email = "amit@test.com",
+            MobileNo = "9876543210",
+            DateOfBirth = DateTime.Today.AddYears(-25),
+            Gender = "Male"
+        };
+    }
+
+    void OnSubmit(User model)
+    {
+        Console.WriteLine("Profile Updated");
+    }
+}

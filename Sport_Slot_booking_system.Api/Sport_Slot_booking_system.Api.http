@@ -1,0 +1,6 @@
+@Sport_Slot_booking_system.Api_HostAddress = http://localhost:5054
+
+GET {{Sport_Slot_booking_system.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

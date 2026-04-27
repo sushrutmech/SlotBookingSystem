@@ -1,0 +1,80 @@
+﻿@page "/login"
+@using Sport_Slot_booking_system.Core.Model
+@using Sport_Slot_booking_system.Web.Services
+
+@inject AuthService AuthService
+@inject NavigationManager Nav
+@inject ILogger<Login> Logger
+@inject CustomAuthStateProvider AuthProvider
+@inject TokenService TokenService
+
+<h3>Login</h3>
+@if (isLoading)
+{
+    <div class="loader-overlay">
+        <RadzenProgressBarCircular Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Small" />
+    </div>
+}
+<RadzenTemplateForm TItem="LoginDto"
+                    Data="@loginModel"
+                    Submit="@HandleLogin">
+
+    <RadzenFieldset Text="Login">
+
+        <RadzenTextBox @bind-Value="loginModel.Email"
+                       Placeholder="Email"
+                       Style="width:100%" />
+
+        <br /><br />
+
+        <RadzenPassword @bind-Value="loginModel.Password"
+                        Placeholder="Password"
+                        Style="width:100%" />
+
+        <br /><br />
+
+        <RadzenButton Text="Login"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Type="Submit" />
+
+    </RadzenFieldset>
+
+</RadzenTemplateForm>
+
+@code {
+    LoginDto loginModel = new();
+    bool isLoading = false;
+
+    private async Task HandleLogin(LoginDto model)
+    {
+        try
+        {
+            isLoading = true;
+
+            var success = await AuthService.Login(model);
+
+            if (!success)
+            {
+                Logger.LogWarning("Login failed");
+                return;
+            }
+
+            // ✅ Get token from storage
+            var token = await TokenService.GetAccessToken();
+
+            // ✅ Notify Blazor auth system
+            AuthProvider.NotifyUserAuthentication();
+
+            // ✅ Navigate (force refresh ensures sidebar updates)
+            Nav.NavigateTo("/dashboard", true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Login error");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -1,0 +1,105 @@
+﻿@page "/slot-booking"
+@using Microsoft.AspNetCore.Authorization
+@using Radzen
+@using Radzen.Blazor
+@using Sport_Slot_booking_system.Web.Services
+@using Sport_Slot_booking_system.Web.Helpers;
+@attribute [Authorize]
+@inject SlotBookingService BookingService
+@inject NotificationService NotificationService
+<h3>Book Your Slot</h3>
+
+@if (isLoading)
+{
+    <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" Style="width:100%" />
+}
+<RadzenCard Style="max-width:600px; margin:auto; padding:20px">
+
+    <RadzenTemplateForm TItem="BookingDto" Data="@model" Submit="@OnSubmit">
+
+        <!-- Facility -->
+        <RadzenDropDown Data="@facilities"
+                        TextProperty="Name"
+                        ValueProperty="Id"
+                        @bind-Value="model.FacilityId"
+                        Placeholder="Select Facility"
+                        Style="width:100%" />
+
+        <br /><br />
+
+        <!-- Start Time -->
+        <RadzenDatePicker @bind-Value="model.StartTime"
+                          ShowTime="true"
+                          Style="width:100%" />
+
+        <br /><br />
+
+        <!-- End Time -->
+        <RadzenDatePicker @bind-Value="model.EndTime"
+                          ShowTime="true"
+                          Style="width:100%" />
+
+        <br /><br />
+
+        <RadzenButton Text="Book Slot"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Type="Submit"
+                      Disabled="@isLoading" />
+
+    </RadzenTemplateForm>
+
+</RadzenCard>
+
+@code {
+    BookingDto model = new();   // ✅ FIXED
+    List<FacilityDto> facilities = new();
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        facilities = new()
+        {
+            new FacilityDto { Id = 1, Name = "Cricket Turf" },
+            new FacilityDto { Id = 2, Name = "Swimming Pool" },
+            new FacilityDto { Id = 3, Name = "Cricket Coaching" }
+        };
+    }
+
+    async Task OnSubmit(BookingDto model)
+    {
+        if (model.StartTime >= model.EndTime)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Invalid Time",
+                "End time must be after start time", 3000);
+            return;
+        }
+
+        isLoading = true;
+
+        var success = await BookingService.CreateBooking(new
+        {
+            facilityId = model.FacilityId,
+            startTime = TimeHelper.ToUtc(model.StartTime),
+            endTime = TimeHelper.ToUtc(model.EndTime)
+        });
+
+        if (success)
+        {
+            this.model = new BookingDto(); // ✅ works now
+        }
+
+        isLoading = false;
+    }
+    public class BookingDto
+    {
+        public int FacilityId { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+    }
+
+    public class FacilityDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}
