@@ -25,8 +25,8 @@ builder.Services.AddScoped(sp =>
 
     return new HttpClient(handler)
     {
-        //BaseAddress = new Uri("https://localhost:7178/")       // dev url
-        BaseAddress = new Uri("https://jdsportapi.runasp.net/")  // production url
+        BaseAddress = new Uri("https://localhost:7178/")       // dev url
+        //BaseAddress = new Uri("https://jdsportapi.runasp.net/")  // production url
     };
 });
 builder.RootComponents.Add<HeadOutlet>("head::after");

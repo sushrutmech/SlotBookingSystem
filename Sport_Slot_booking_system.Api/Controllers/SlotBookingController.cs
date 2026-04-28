@@ -39,7 +39,7 @@
         }
 
         // ✅ GET ALL BOOKINGS
-        [HttpGet]
+        [AllowAnonymous]
         [HttpPost("grid")]
         public async Task<ApiResponse<PaginationResponse<List<SlotBookingDto>>>> GetGrid([FromBody] PaginationDomain request)
         {
@@ -50,6 +50,14 @@
                 Data = data,
                 Message = "Success"
             };
+        }
+
+
+        [HttpGet("demoget")]
+        public async Task<IActionResult> GetGrid()
+        {
+
+            return Ok("get sucess");
         }
 
         // ✅ CREATE BOOKING
